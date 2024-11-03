@@ -430,7 +430,19 @@ void PrintSquaresWithSpecificEnergy(const unordered_map<int, vector<Square>>& sq
 	}
 }
 
-void GetConfiguration(uint64_t number, vector<int>& configuration)
+unsigned long long IntPow(int x, int y)
+{
+	unsigned long long result = 1;
+
+	for (int i = 0; i < y; i++)
+	{
+		result *= x;
+	}
+
+	return result;
+}
+
+void GetConfiguration(unsigned long long number, vector<int>& configuration)
 {
 	for (int i = 0; i < configuration.size(); i++)
 	{
@@ -495,9 +507,15 @@ pair<int, vector<vector<int>>> GetPossibleUniqueCurrentLayerNextConfigurationsWi
 	unordered_map<int, vector<vector<int>>>	possible_unique_current_layer_next_configurations;
 
 	int current_layer_next_configurations_size = signs[current_layer].size() - current_layer_configuration.size() + 1;
-	int number = pow(2, current_layer_next_configurations_size) - 1;
+
+	if (current_layer_next_configurations_size > 64)
+	{
+		throw std::out_of_range("maximum diagonal size exceeded");
+	}
+
+	unsigned long long number = IntPow(2, current_layer_next_configurations_size) - 1;
 	
-	for (int i = 0; i <= number; i++)
+	for (unsigned long long i = 0; i <= number; i++)
 	{
 		vector<int> current_layer_next_configuration(current_layer_next_configurations_size);
 		GetConfiguration(i, current_layer_next_configuration);
@@ -508,6 +526,11 @@ pair<int, vector<vector<int>>> GetPossibleUniqueCurrentLayerNextConfigurationsWi
 		if (merged_layers_energy < minimum_energy)
 		{
 			minimum_energy = merged_layers_energy;
+		}
+
+		if (i == ULLONG_MAX)
+		{
+			break;
 		}
 	}
 
