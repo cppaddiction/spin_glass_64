@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <climits>
 #include <cassert>
+#include <thread>
 
 using namespace std;
 
@@ -171,7 +172,7 @@ void PrintMachineLattice(const vector<vector<string>>& lattice, ostream& out)
 				pair<string, int> left_pair = make_pair("=", -1);
 				pair<string, int> right_pair = make_pair("=", -1);
 				pair<string, int> down_pair = make_pair("=", -1);
-				try 
+				try
 				{
 					up_pair = make_pair(lattice.at(i - 1).at(j), stoi(lattice.at(i - 2).at(j).substr(1, lattice.at(i - 2).at(j).size() - 1)));
 				}
@@ -179,7 +180,7 @@ void PrintMachineLattice(const vector<vector<string>>& lattice, ostream& out)
 				{
 
 				}
-				try 
+				try
 				{
 					left_pair = make_pair(lattice.at(i).at(j - 1), stoi(lattice.at(i).at(j - 2).substr(1, lattice.at(i).at(j - 2).size() - 1)));
 				}
@@ -187,7 +188,7 @@ void PrintMachineLattice(const vector<vector<string>>& lattice, ostream& out)
 				{
 
 				}
-				try 
+				try
 				{
 					right_pair = make_pair(lattice.at(i).at(j + 1), stoi(lattice.at(i).at(j + 2).substr(1, lattice.at(i).at(j + 2).size() - 1)));
 				}
@@ -195,7 +196,7 @@ void PrintMachineLattice(const vector<vector<string>>& lattice, ostream& out)
 				{
 
 				}
-				try 
+				try
 				{
 					down_pair = make_pair(lattice.at(i + 1).at(j), stoi(lattice.at(i + 2).at(j).substr(1, lattice.at(i + 2).at(j).size() - 1)));
 				}
@@ -460,7 +461,7 @@ vector<int> MergeLayers(const vector<int>& up_layer, const vector<int>& down_lay
 		for (int i = 0; i < down_layer.size(); i++)
 		{
 			merged_layers.push_back(down_layer[i]);
-			try 
+			try
 			{
 				merged_layers.push_back(up_layer.at(i));
 			}
@@ -475,7 +476,7 @@ vector<int> MergeLayers(const vector<int>& up_layer, const vector<int>& down_lay
 		for (int i = 0; i < up_layer.size(); i++)
 		{
 			merged_layers.push_back(up_layer[i]);
-			try 
+			try
 			{
 				merged_layers.push_back(down_layer.at(i));
 			}
@@ -510,11 +511,11 @@ pair<int, vector<vector<int>>> GetPossibleUniqueCurrentLayerNextConfigurationsWi
 
 	if (current_layer_next_configurations_size > 64)
 	{
-		throw std::out_of_range("maximum diagonal size exceeded");
+		throw out_of_range("maximum diagonal size exceeded");
 	}
 
 	unsigned long long number = IntPow(2, current_layer_next_configurations_size) - 1;
-	
+
 	for (unsigned long long i = 0; i <= number; i++)
 	{
 		vector<int> current_layer_next_configuration(current_layer_next_configurations_size);
@@ -617,7 +618,7 @@ int ComputeState(const vector<vector<string>>& state)
 	for (int i = 0; i < state.size(); i++)
 	{
 		vector<int> horizontal_merged_layers;
-		vector<string> horizontal_merged_signs;	
+		vector<string> horizontal_merged_signs;
 
 		for (int j = 0; j < state[i].size(); j++)
 		{
@@ -657,7 +658,7 @@ int ComputeState(const vector<vector<string>>& state)
 	return result;
 }
 
-class Node 
+class Node
 {
 public:
 	Node() = default;
@@ -675,7 +676,7 @@ public:
 			{
 				auto child_energy_and_configurations = GetPossibleUniqueCurrentLayerNextConfigurationsWithMinimumEnergy(current_layer_, down_left_corner_layer, current_layer_configuration, signs_);
 				auto child = Node(current_layer_ + 1, current_layer_energy_ + child_energy_and_configurations.first, child_energy_and_configurations.second, current_layer_parents_stack_, signs_);
-				
+
 				child.AddParent(current_layer_configuration);
 
 				if (!destroy_odd_children)
@@ -763,25 +764,38 @@ int main()
 	auto down_left_signs = GetDownLeftSigns(lattice);
 	auto down_right_signs = GetDownRightSigns(up_left_signs);
 
-	ofstream out_up_left("output_up_left.txt");
-	ofstream out_up_right("output_up_right.txt");
-	ofstream out_down_left("output_down_left.txt");
-	ofstream out_down_right("output_down_right.txt");
+	thread thread1([&]() {
+		ofstream out_up_left("output_up_left.txt");
+		auto up_left_tree = Node(0, 0, { {1}, {-1} }, {}, up_left_signs);
+		up_left_tree.BuildTree(up_left_signs.size(), lattice_linear_y_size - 1, true, false, out_up_left);
+		out_up_left.close();
+		});
 
-	auto up_left_tree = Node(0, 0, { {1}, {-1} }, {}, up_left_signs);
-	auto up_right_tree = Node(0, 0, { {1}, {-1} }, {}, up_right_signs);
-	auto down_left_tree = Node(0, 0, { {1}, {-1} }, {}, down_left_signs);
-	auto down_right_tree = Node(0, 0, { {1}, {-1} }, {}, down_right_signs);
+	thread thread2([&]() {
+		ofstream out_up_right("output_up_right.txt");
+		auto up_right_tree = Node(0, 0, { {1}, {-1} }, {}, up_right_signs);
+		up_right_tree.BuildTree(up_right_signs.size(), lattice_linear_y_size - 1, true, false, out_up_right);
+		out_up_right.close();
+		});
 
-	up_left_tree.BuildTree(up_left_signs.size(), lattice_linear_y_size - 1, true, false, out_up_left);
-	up_right_tree.BuildTree(up_right_signs.size(), lattice_linear_y_size - 1, true, false, out_up_right);
-	down_left_tree.BuildTree(down_left_signs.size(), lattice_linear_y_size - 1, true, false, out_down_left);
-	down_right_tree.BuildTree(down_right_signs.size(), lattice_linear_x_size - 1, true, true, out_down_right);
+	thread thread3([&]() {
+		ofstream out_down_left("output_down_left.txt");
+		auto down_left_tree = Node(0, 0, { {1}, {-1} }, {}, down_left_signs);
+		down_left_tree.BuildTree(down_left_signs.size(), lattice_linear_y_size - 1, true, false, out_down_left);
+		out_down_left.close();
+		});
 
-	out_up_left.close();
-	out_up_right.close();
-	out_down_left.close();
-	out_down_right.close();
+	thread thread4([&]() {
+		ofstream out_down_right("output_down_right.txt");
+		auto down_right_tree = Node(0, 0, { {1}, {-1} }, {}, down_right_signs);
+		down_right_tree.BuildTree(down_right_signs.size(), lattice_linear_x_size - 1, true, true, out_down_right);
+		out_down_right.close();
+		});
+
+	thread1.join();
+	thread2.join();
+	thread3.join();
+	thread4.join();
 
 	return 0;
 }
