@@ -683,6 +683,7 @@ public:
 				{
 					current_layer_children_.push_back(child);
 					current_layer_children_[current_layer_children_.size() - 1].BuildTree(max_layer, down_left_corner_layer, destroy_odd_children, reversed_state, out);
+					current_layer_children_.pop_back();
 				}
 				else
 				{
@@ -702,6 +703,7 @@ public:
 					{
 						current_layer_children_.push_back(current_layer_best_child);
 						current_layer_children_[current_layer_children_.size() - 1].BuildTree(max_layer, down_left_corner_layer, destroy_odd_children, reversed_state, out);
+						current_layer_children_.pop_back();
 					}
 				}
 			}
