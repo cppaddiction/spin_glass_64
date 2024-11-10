@@ -16,8 +16,6 @@ int lattice_linear_y_size;
 int lattice_y_size;
 int lattice_capacity;
 
-int mi = INT_MAX;
-
 vector<vector<string>> LoadHumanLattice(istream& in)
 {
 	in >> lattice_linear_x_size >> lattice_x_size >> lattice_linear_y_size >> lattice_y_size;
@@ -665,7 +663,7 @@ public:
 
 	explicit Node(int current_layer, int current_layer_energy, const vector<vector<int>>& current_layer_configurations, const vector<vector<int>>& current_layer_parents_stack, const vector<vector<string>>& signs) : current_layer_(current_layer), current_layer_energy_(current_layer_energy), current_layer_configurations_(current_layer_configurations), current_layer_parents_stack_(current_layer_parents_stack), signs_(signs) {}
 
-	void BuildTree(int max_layer, int down_left_corner_layer, bool destroy_odd_children, bool reversed_state, ostream& out)
+	void BuildTree(int& mi, int max_layer, int down_left_corner_layer, bool destroy_odd_children, bool reversed_state, ostream& out)
 	{
 		if (current_layer_ != max_layer)
 		{
@@ -682,7 +680,7 @@ public:
 				if (!destroy_odd_children)
 				{
 					current_layer_children_.push_back(child);
-					current_layer_children_[current_layer_children_.size() - 1].BuildTree(max_layer, down_left_corner_layer, destroy_odd_children, reversed_state, out);
+					current_layer_children_[current_layer_children_.size() - 1].BuildTree(mi, max_layer, down_left_corner_layer, destroy_odd_children, reversed_state, out);
 					current_layer_children_.pop_back();
 				}
 				else
@@ -702,15 +700,10 @@ public:
 					if (current_layer_best_child.GetEnergy() == minimum_energy)
 					{
 						current_layer_children_.push_back(current_layer_best_child);
-						current_layer_children_[current_layer_children_.size() - 1].BuildTree(max_layer, down_left_corner_layer, destroy_odd_children, reversed_state, out);
+						current_layer_children_[current_layer_children_.size() - 1].BuildTree(mi, max_layer, down_left_corner_layer, destroy_odd_children, reversed_state, out);
 						current_layer_children_.pop_back();
 					}
 				}
-			}
-
-			if (current_layer_ == 0)
-			{
-				mi = INT_MAX;
 			}
 		}
 		else
@@ -767,30 +760,34 @@ int main()
 	auto down_right_signs = GetDownRightSigns(up_left_signs);
 
 	thread thread1([&]() {
+		int mi = INT_MAX;
 		ofstream out_up_left("output_up_left.txt");
 		auto up_left_tree = Node(0, 0, { {1}, {-1} }, {}, up_left_signs);
-		up_left_tree.BuildTree(up_left_signs.size(), lattice_linear_y_size - 1, true, false, out_up_left);
+		up_left_tree.BuildTree(mi, up_left_signs.size(), lattice_linear_y_size - 1, true, false, out_up_left);
 		out_up_left.close();
 		});
 
 	thread thread2([&]() {
+		int mi = INT_MAX;
 		ofstream out_up_right("output_up_right.txt");
 		auto up_right_tree = Node(0, 0, { {1}, {-1} }, {}, up_right_signs);
-		up_right_tree.BuildTree(up_right_signs.size(), lattice_linear_y_size - 1, true, false, out_up_right);
+		up_right_tree.BuildTree(mi, up_right_signs.size(), lattice_linear_y_size - 1, true, false, out_up_right);
 		out_up_right.close();
 		});
 
 	thread thread3([&]() {
+		int mi = INT_MAX;
 		ofstream out_down_left("output_down_left.txt");
 		auto down_left_tree = Node(0, 0, { {1}, {-1} }, {}, down_left_signs);
-		down_left_tree.BuildTree(down_left_signs.size(), lattice_linear_y_size - 1, true, false, out_down_left);
+		down_left_tree.BuildTree(mi, down_left_signs.size(), lattice_linear_y_size - 1, true, false, out_down_left);
 		out_down_left.close();
 		});
 
 	thread thread4([&]() {
+		int mi = INT_MAX;
 		ofstream out_down_right("output_down_right.txt");
 		auto down_right_tree = Node(0, 0, { {1}, {-1} }, {}, down_right_signs);
-		down_right_tree.BuildTree(down_right_signs.size(), lattice_linear_x_size - 1, true, true, out_down_right);
+		down_right_tree.BuildTree(mi, down_right_signs.size(), lattice_linear_x_size - 1, true, true, out_down_right);
 		out_down_right.close();
 		});
 
