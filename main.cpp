@@ -8,7 +8,9 @@
 #include <cassert>
 #include <thread>
 
+
 using namespace std;
+
 
 int lattice_linear_x_size;
 int lattice_x_size;
@@ -422,6 +424,7 @@ unordered_map<int, vector<Square>> GetPossibleUnique2x2SquareConfigurationsByEne
 void PrintSquaresWithSpecificEnergy(const unordered_map<int, vector<Square>>& squares_by_energy, int energy, ostream& out)
 {
 	const auto& squares = squares_by_energy.at(energy);
+
 	for (const auto& square : squares)
 	{
 		PrintSquare(square, out);
@@ -520,11 +523,11 @@ pair<int, vector<vector<int>>> GetPossibleUniqueCurrentLayerNextConfigurationsWi
 		GetConfiguration(i, current_layer_next_configuration);
 
 		auto merged_layers_energy = ComputeMergedLayers(MergeLayers(current_layer_configuration, current_layer_next_configuration, current_layer >= down_left_corner_layer ? true : false), signs[current_layer]);
-		possible_unique_current_layer_next_configurations[merged_layers_energy].push_back(current_layer_next_configuration);
-
-		if (merged_layers_energy < minimum_energy)
+		
+		if (merged_layers_energy <= minimum_energy)
 		{
 			minimum_energy = merged_layers_energy;
+			possible_unique_current_layer_next_configurations[minimum_energy].push_back(current_layer_next_configuration);
 		}
 
 		if (i == ULLONG_MAX)
@@ -533,7 +536,7 @@ pair<int, vector<vector<int>>> GetPossibleUniqueCurrentLayerNextConfigurationsWi
 		}
 	}
 
-	return make_pair(minimum_energy, possible_unique_current_layer_next_configurations[minimum_energy]);
+	return make_pair(minimum_energy, possible_unique_current_layer_next_configurations.at(minimum_energy));
 }
 
 vector<vector<string>> GetState(const vector<vector<int>>& numbers, const vector<vector<string>>& signs, bool reversed_state)
@@ -668,7 +671,7 @@ public:
 		if (current_layer_ != max_layer)
 		{
 			int minimum_energy = INT_MAX;
-			vector<Node> current_layer_best_children;
+			unordered_map<int, vector<Node>> current_layer_best_children_by_energy;
 
 			for (const auto& current_layer_configuration : current_layer_configurations_)
 			{
@@ -688,21 +691,20 @@ public:
 					if (current_layer_energy_ + child_energy_and_configurations.first <= minimum_energy)
 					{
 						minimum_energy = current_layer_energy_ + child_energy_and_configurations.first;
-						current_layer_best_children.push_back(child);
+						current_layer_best_children_by_energy[minimum_energy].push_back(child);
 					}
 				}
 			}
 
 			if (destroy_odd_children)
 			{
+				const auto& current_layer_best_children = current_layer_best_children_by_energy.at(minimum_energy);
+
 				for (const auto& current_layer_best_child : current_layer_best_children)
 				{
-					if (current_layer_best_child.GetEnergy() == minimum_energy)
-					{
-						current_layer_children_.push_back(current_layer_best_child);
-						current_layer_children_[current_layer_children_.size() - 1].BuildTree(mi, max_layer, down_left_corner_layer, destroy_odd_children, reversed_state, out);
-						current_layer_children_.pop_back();
-					}
+					current_layer_children_.push_back(current_layer_best_child);
+					current_layer_children_[current_layer_children_.size() - 1].BuildTree(mi, max_layer, down_left_corner_layer, destroy_odd_children, reversed_state, out);
+					current_layer_children_.pop_back();
 				}
 			}
 		}
@@ -731,8 +733,6 @@ public:
 	{
 		current_layer_parents_stack_.push_back(parent);
 	}
-
-	int GetEnergy() const { return current_layer_energy_; }
 
 private:
 	int current_layer_ = 0;
